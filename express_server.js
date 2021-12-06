@@ -25,8 +25,9 @@ app.get("/set", (req, res) => {
   res.send(`a = ${a}`);
 });
 
-app.get("/fetch", (req, res) => {
-  res.send(`a = ${a}`);
+app.get("/urls", (req, res) => {
+  const templateVars = { urls: urlDatabase };
+  res.render("urls_index", templateVars);
 });
 
 app.listen(PORT, () => {
