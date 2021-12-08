@@ -20,7 +20,25 @@
           Short URL: <a href="/u/<%= shortURL %>"><%= shortURL %></a>
         </p>
       </div>
-      <div class="card-footer text-muted"></div>
+      <div class="card-footer text-muted">
+        <h2 style="margin-bottom: 0">Edit</h2>
+        <form
+          style="margin-bottom: 1.5rem"
+          action="/urls/<%= shortURL%>"
+          method="POST"
+        >
+          <label for="longURL" style="font-size: 1.4rem">New URL:</label>
+          <input type="text" name="longURL" style="width: 280px; height:
+          40px;margin: 1em auto; font-size: 1.2rem;" value = "<%= longURL%>"" />
+          <button
+            type="submit"
+            class="btn btn-primary"
+            style="height: 50px; width: 100px; font-size: 1.4rem"
+          >
+            Submit
+          </button>
+        </form>
+      </div>
     </div>
     <!-- Bootstrap JS -->
     <script
