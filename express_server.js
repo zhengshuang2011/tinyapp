@@ -18,6 +18,15 @@ const generateRandomString = () => {
   return Math.random().toString(36).substring(2, 8);
 };
 
+const registrationDuplication = (email, users) => {
+  for (let user in users) {
+    if (users[user].email === email) {
+      return true;
+    }
+  }
+  return false;
+};
+
 // -------------------------------------------------
 app.get("/", (req, res) => {
   res.redirect("/urls");
@@ -82,16 +91,18 @@ app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   if (!email || !password) {
-    res.render("404");
-  } else {
-    users[user_id] = {
-      id: user_id,
-      email,
-      password,
-    };
-    res.cookie("user_id", user_id);
-    res.redirect("/urls");
+    res.status(400).send("Email/Password can not be empty");
+  } else if (registrationDuplication(email, users)) {
+    res.status(400).send("User is already registered!");
   }
+  users[user_id] = {
+    id: user_id,
+    email,
+    password,
+  };
+  console.log(users);
+  res.cookie("user_id", user_id);
+  res.redirect("/urls");
 });
 
 app.post("/urls", (req, res) => {
