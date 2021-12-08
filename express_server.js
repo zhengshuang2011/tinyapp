@@ -45,23 +45,32 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
+  const userId = req.cookies["user_id"];
+  const email = req.cookies["email"];
   const templateVars = {
-    username: req.cookies["user_id"],
+    userId,
     urls: urlDatabase,
+    email,
   };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
+  const userId = req.cookies["user_id"];
+  const email = req.cookies["email"];
   const templateVars = {
-    username: req.cookies["user_id"],
+    userId,
+    email,
   };
   res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
+  const userId = req.cookies["user_id"];
+  const email = req.cookies["email"];
   const templateVars = {
-    username: req.cookies["user_id"],
+    userId,
+    email,
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL],
   };
@@ -81,14 +90,16 @@ app.get("/u/:shortURL", (req, res) => {
 
 app.get("/login", (req, res) => {
   const templateVars = {
-    username: req.cookies["user_id"],
+    userId: null,
+    email: null,
   };
   res.render("urls_login", templateVars);
 });
 
 app.get("/register", (req, res) => {
   const templateVars = {
-    username: req.cookies["user_id"],
+    userId: null,
+    email: null,
   };
   res.render("urls_register", templateVars);
 });
@@ -110,8 +121,7 @@ app.post("/register", (req, res) => {
     password,
   };
   console.log(users);
-  res.cookie("user_id", user_id);
-  res.redirect("/urls");
+  res.cookie("user_id", user_id).cookie("email", email).redirect("/urls");
 });
 
 app.post("/login", (req, res) => {
@@ -120,13 +130,12 @@ app.post("/login", (req, res) => {
   const user = registrationExist(email, users);
   if (!user) {
     res
-      .status(400)
+      .status(403)
       .send("Email does not exist! Please enter an valid email address");
   } else if (!authenticateUser(email, password)) {
-    res.status(400).send("Please enter a correct password!");
+    res.status(403).send("Please enter a correct password!");
   }
-  res.cookie("user_id", user.id);
-  res.redirect("urls");
+  res.cookie("user_id", user.id).cookie("email", email).redirect("/urls");
 });
 
 app.post("/urls", (req, res) => {
@@ -150,10 +159,11 @@ app.post("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  res.clearCookie("user_id").clearCookie("email");
   const templateVars = {
-    username: null,
+    userId: null,
     urls: urlDatabase,
+    email: null,
   };
   res.render("urls_index", templateVars);
 });

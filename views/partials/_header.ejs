@@ -18,19 +18,7 @@
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
     </div>
-    <% if(!username){ %>
-    <!-- <form class="form-inline" action="/login" method="POST">
-      <div class="form-group mb-2">
-        <input
-          class="form-control"
-          type="text"
-          name="username"
-          placeholder="username"
-          style="width: 200px; margin: 0.7em"
-        />
-        <button type="submit" class="btn btn-outline-dark">Login</button>
-      </div>
-    </form> -->
+    <% if(!userId){ %>
     <div class="collapse navbar-collapse justify-content-end">
       <div class="navbar-nav" style="font-size: 1.2rem">
         <a class="nav-item nav-link" href="/login">Login</a>
@@ -41,7 +29,7 @@
     <form action="/logout" method="POST">
       <div class="form-group mb-2">
         <label for="username" style="margin-right: 10px; color: black"
-          >Logged In As: TinyApp User!</label
+          >Logged In As: <%= email%>!</label
         >
         <button type="submit" class="btn btn-outline-dark">Logout</button>
       </div>
