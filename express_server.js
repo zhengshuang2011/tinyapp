@@ -18,11 +18,19 @@ const generateRandomString = () => {
   return Math.random().toString(36).substring(2, 8);
 };
 
-const registrationDuplication = (email, users) => {
+const registrationExist = (email, users) => {
   for (let user in users) {
     if (users[user].email === email) {
-      return true;
+      return users[user];
     }
+  }
+  return false;
+};
+
+const authenticateUser = (email, password) => {
+  const user = registrationExist(email, users);
+  if (user.password === password) {
+    return true;
   }
   return false;
 };
@@ -90,9 +98,10 @@ app.post("/register", (req, res) => {
   const user_id = generateRandomString();
   const email = req.body.email;
   const password = req.body.password;
+  const user = registrationExist(email, users);
   if (!email || !password) {
     res.status(400).send("Email/Password can not be empty");
-  } else if (registrationDuplication(email, users)) {
+  } else if (user) {
     res.status(400).send("User is already registered!");
   }
   users[user_id] = {
@@ -103,6 +112,21 @@ app.post("/register", (req, res) => {
   console.log(users);
   res.cookie("user_id", user_id);
   res.redirect("/urls");
+});
+
+app.post("/login", (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+  const user = registrationExist(email, users);
+  if (!user) {
+    res
+      .status(400)
+      .send("Email does not exist! Please enter an valid email address");
+  } else if (!authenticateUser(email, password)) {
+    res.status(400).send("Please enter a correct password!");
+  }
+  res.cookie("user_id", user.id);
+  res.redirect("urls");
 });
 
 app.post("/urls", (req, res) => {
@@ -123,15 +147,6 @@ app.post("/urls/:shortURL", (req, res) => {
   const content = req.body.longURL;
   updateLongUrl(shortURL, content);
   res.redirect("/urls");
-});
-
-app.post("/login", (req, res) => {
-  const username = req.body.username;
-  const templateVars = {
-    username,
-    urls: urlDatabase,
-  };
-  res.render("urls_index", templateVars);
 });
 
 app.post("/logout", (req, res) => {
