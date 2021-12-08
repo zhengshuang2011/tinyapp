@@ -19,7 +19,7 @@
       </div>
     </div>
     <% if(!username){ %>
-    <form class="form-inline" action="/login" method="POST">
+    <!-- <form class="form-inline" action="/login" method="POST">
       <div class="form-group mb-2">
         <input
           class="form-control"
@@ -30,7 +30,13 @@
         />
         <button type="submit" class="btn btn-outline-dark">Login</button>
       </div>
-    </form>
+    </form> -->
+    <div class="collapse navbar-collapse justify-content-end">
+      <div class="navbar-nav" style="font-size: 1.2rem">
+        <a class="nav-item nav-link" href="/login">Login</a>
+        <a class="nav-item nav-link" href="/register">Register</a>
+      </div>
+    </div>
     <% }else{ %>
     <form action="/logout" method="POST">
       <div class="form-group mb-2">
