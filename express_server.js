@@ -8,13 +8,8 @@ const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
 
 const urlDatabase = {};
-const users = require("./db/user");
-const {
-  updateLongUrl,
-  getUserByEmail,
-  urlFinder,
-  generateRandomString,
-} = require("./helper");
+const users = {};
+const { getUserByEmail, urlFinder, generateRandomString } = require("./helper");
 
 // -------------------------------------------------
 app.use(
@@ -226,7 +221,7 @@ app.post("/urls/:id", (req, res) => {
   }
 
   const content = req.body.longURL;
-  updateLongUrl(shortURL, content);
+  urlDatabase[shortURL].longURL = content;
   res.redirect("/urls");
 });
 

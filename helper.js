@@ -1,6 +1,3 @@
-const updateLongUrl = (shortURL, content) => {
-  urlDatabase[shortURL].longURL = content;
-};
 const generateRandomString = () => {
   return Math.random().toString(36).substring(2, 8);
 };
@@ -25,7 +22,6 @@ const urlFinder = (userId, urlDatabase) => {
 };
 
 module.exports = {
-  updateLongUrl,
   getUserByEmail,
   urlFinder,
   generateRandomString,
