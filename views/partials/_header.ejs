@@ -15,7 +15,9 @@
     <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
       <div class="navbar-nav" style="font-size: 1.2rem">
         <a class="nav-item nav-link" href="/urls">My URLs</a>
+        <% if(userId){ %>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
+        <% } %>
       </div>
     </div>
     <% if(!userId){ %>
