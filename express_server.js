@@ -4,15 +4,24 @@ const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 const request = require("request");
 const cookieParser = require("cookie-parser");
+const cookieSession = require("cookie-session");
 const users = require("./db/user");
 const bcrypt = require("bcryptjs");
 
 const urlDatabase = {};
 
+// -------------------------------------------------
+app.use(
+  cookieSession({
+    name: "session",
+    keys: ["key1", "key2"],
+  })
+);
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.set("view engine", "ejs");
 // -------------------------------------------------
+
 const updateLongUrl = (shortURL, content) => {
   urlDatabase[shortURL].longURL = content;
 };
@@ -41,7 +50,7 @@ const urlFinder = (userId, urlDatabase) => {
 
 // -------------------------------------------------
 app.get("/", (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
   if (userId) {
     res.redirect("/urls");
   } else {
@@ -54,20 +63,22 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const userId = req.cookies["user_id"];
-  const email = req.cookies["email"];
+  const userId = req.session.user_id;
+  const email = userId ? users[userId].email : null;
   const urls = userId ? urlFinder(userId, urlDatabase) : null;
   const templateVars = {
     userId,
     email,
     urls,
   };
+  console.log(users);
+  console.log(urlDatabase);
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  const userId = req.cookies["user_id"];
-  const email = req.cookies["email"];
+  const userId = req.session.user_id;
+  const email = userId ? users[userId].email : null;
   const templateVars = {
     userId,
     email,
@@ -79,8 +90,8 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  const userId = req.cookies["user_id"];
-  const email = req.cookies["email"];
+  const userId = req.session.user_id;
+  const email = userId ? users[userId].email : null;
   const shortURL = req.params.id;
 
   if (!userId) {
@@ -101,7 +112,7 @@ app.get("/urls/:id", (req, res) => {
 });
 
 app.get("/u/:id", (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
   const shortURL = req.params.id;
 
   if (!userId) {
@@ -158,7 +169,8 @@ app.post("/register", (req, res) => {
         email,
         password: hash,
       };
-      res.cookie("user_id", user_id).cookie("email", email).redirect("/urls");
+      req.session.user_id = user_id;
+      res.redirect("/urls");
     });
   });
 });
@@ -178,12 +190,13 @@ app.post("/login", (req, res) => {
     if (!success) {
       return res.status(403).send("Please enter a correct password!");
     }
-    res.cookie("user_id", user.id).cookie("email", email).redirect("/urls");
+    req.session.user_id = user.id;
+    res.redirect("/urls");
   });
 });
 
 app.post("/urls", (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
 
   if (!userId) {
     return res
@@ -201,7 +214,7 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:id/delete", (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
   const shortURL = req.params.id;
 
   if (!userId) {
@@ -219,7 +232,7 @@ app.post("/urls/:id/delete", (req, res) => {
 });
 
 app.post("/urls/:id", (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
   const shortURL = req.params.id;
 
   if (!userId) {
@@ -238,7 +251,7 @@ app.post("/urls/:id", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id").clearCookie("email");
+  req.session = null;
   res.redirect("/urls");
 });
 
