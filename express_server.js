@@ -5,10 +5,16 @@ const bodyParser = require("body-parser");
 const request = require("request");
 const cookieParser = require("cookie-parser");
 const cookieSession = require("cookie-session");
-const users = require("./db/user");
 const bcrypt = require("bcryptjs");
 
 const urlDatabase = {};
+const users = require("./db/user");
+const {
+  updateLongUrl,
+  getUserByEmail,
+  urlFinder,
+  generateRandomString,
+} = require("./helper");
 
 // -------------------------------------------------
 app.use(
@@ -21,34 +27,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.set("view engine", "ejs");
 // -------------------------------------------------
-
-const updateLongUrl = (shortURL, content) => {
-  urlDatabase[shortURL].longURL = content;
-};
-const generateRandomString = () => {
-  return Math.random().toString(36).substring(2, 8);
-};
-
-const registrationExist = (email, users) => {
-  for (let user in users) {
-    if (users[user].email === email) {
-      return users[user];
-    }
-  }
-  return false;
-};
-
-const urlFinder = (userId, urlDatabase) => {
-  let urls = {};
-  for (let elem in urlDatabase) {
-    if (urlDatabase[elem].userId === userId) {
-      urls[elem] = urlDatabase[elem];
-    }
-  }
-  return urls;
-};
-
 // -------------------------------------------------
+
 app.get("/", (req, res) => {
   const userId = req.session.user_id;
   if (userId) {
@@ -154,11 +134,11 @@ app.post("/register", (req, res) => {
   const user_id = generateRandomString();
   const email = req.body.email;
   const password = req.body.password;
-  const user = registrationExist(email, users);
+  const userId = getUserByEmail(email, users);
 
   if (!email || !password) {
     return res.status(400).send("Email/Password can not be empty");
-  } else if (user) {
+  } else if (userId) {
     return res.status(400).send("User is already registered!");
   }
 
@@ -178,19 +158,19 @@ app.post("/register", (req, res) => {
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  const user = registrationExist(email, users);
+  const userId = getUserByEmail(email, users);
 
-  if (!user) {
+  if (!userId) {
     return res
       .status(403)
       .send("Email does not exist! Please enter an valid email address");
   }
 
-  bcrypt.compare(password, user.password, (err, success) => {
+  bcrypt.compare(password, users[userId].password, (err, success) => {
     if (!success) {
       return res.status(403).send("Please enter a correct password!");
     }
-    req.session.user_id = user.id;
+    req.session.user_id = users[userId].id;
     res.redirect("/urls");
   });
 });
