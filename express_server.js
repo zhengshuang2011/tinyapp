@@ -91,7 +91,7 @@ app.get("/u/:id", (req, res) => {
   const shortURL = req.params.id;
 
   if (!userId) {
-    return es.status(400).send("Please Login first");
+    return res.status(400).send("Please Login first");
   } else if (!Object.keys(urlDatabase).includes(shortURL)) {
     return res.status(403).send("Failed, this short URL has not been created.");
   } else if (userId !== urlDatabase[shortURL].userId) {
