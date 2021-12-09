@@ -5,6 +5,8 @@ const bodyParser = require("body-parser");
 const request = require("request");
 const cookieParser = require("cookie-parser");
 const users = require("./db/user");
+const bcrypt = require("bcryptjs");
+
 const urlDatabase = {};
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -23,14 +25,6 @@ const registrationExist = (email, users) => {
     if (users[user].email === email) {
       return users[user];
     }
-  }
-  return false;
-};
-
-const authenticateUser = (email, password) => {
-  const user = registrationExist(email, users);
-  if (user.password === password) {
-    return true;
   }
   return false;
 };
@@ -88,13 +82,15 @@ app.get("/urls/:id", (req, res) => {
   const userId = req.cookies["user_id"];
   const email = req.cookies["email"];
   const shortURL = req.params.id;
+
   if (!userId) {
     return res.status(400).send("Please Login first");
   } else if (!Object.keys(urlDatabase).includes(shortURL)) {
     return res.status(403).send("Failed, this short URL has not been created.");
   } else if (userId !== urlDatabase[shortURL].userId) {
-    return res.status(403).send("Can not access to this URL");
+    return res.status(401).send("Can not access to this URL");
   }
+
   const templateVars = {
     userId,
     email,
@@ -107,13 +103,15 @@ app.get("/urls/:id", (req, res) => {
 app.get("/u/:id", (req, res) => {
   const userId = req.cookies["user_id"];
   const shortURL = req.params.id;
+
   if (!userId) {
     return es.status(400).send("Please Login first");
   } else if (!Object.keys(urlDatabase).includes(shortURL)) {
     return res.status(403).send("Failed, this short URL has not been created.");
   } else if (userId !== urlDatabase[shortURL].userId) {
-    return res.status(403).send("Can not access to this URL");
+    return res.status(401).send("Can not access to this URL");
   }
+
   const longURL = urlDatabase[shortURL].longURL;
   request(longURL, (error, response, body) => {
     if (error) {
@@ -146,40 +144,53 @@ app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const user = registrationExist(email, users);
+
   if (!email || !password) {
     return res.status(400).send("Email/Password can not be empty");
   } else if (user) {
     return res.status(400).send("User is already registered!");
   }
-  users[user_id] = {
-    id: user_id,
-    email,
-    password,
-  };
-  res.cookie("user_id", user_id).cookie("email", email).redirect("/urls");
+
+  bcrypt.genSalt(10, (err, salt) => {
+    bcrypt.hash(password, salt, (err, hash) => {
+      users[user_id] = {
+        id: user_id,
+        email,
+        password: hash,
+      };
+      res.cookie("user_id", user_id).cookie("email", email).redirect("/urls");
+    });
+  });
 });
 
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const user = registrationExist(email, users);
+
   if (!user) {
     return res
       .status(403)
       .send("Email does not exist! Please enter an valid email address");
-  } else if (!authenticateUser(email, password)) {
-    return res.status(403).send("Please enter a correct password!");
   }
-  res.cookie("user_id", user.id).cookie("email", email).redirect("/urls");
+
+  bcrypt.compare(password, user.password, (err, success) => {
+    if (!success) {
+      return res.status(403).send("Please enter a correct password!");
+    }
+    res.cookie("user_id", user.id).cookie("email", email).redirect("/urls");
+  });
 });
 
 app.post("/urls", (req, res) => {
   const userId = req.cookies["user_id"];
+
   if (!userId) {
     return res
-      .status(403)
+      .status(401)
       .send("Can not edit this page if you are not login!\n");
   }
+
   const shortURL = generateRandomString();
   const longURL = req.body.longURL;
   urlDatabase[shortURL] = {
@@ -195,12 +206,12 @@ app.post("/urls/:id/delete", (req, res) => {
 
   if (!userId) {
     return res
-      .status(403)
+      .status(401)
       .send("Can not delete this URL if you are not login!\n");
   } else if (!Object.keys(urlDatabase).includes(shortURL)) {
     return res.status(403).send("Failed, this short URL has not been created.");
   } else if (userId !== urlDatabase[shortURL].userId) {
-    return res.status(403).send("You can not delete other user's URL");
+    return res.status(401).send("You can not delete other user's URL");
   }
 
   delete urlDatabase[shortURL];
@@ -213,12 +224,12 @@ app.post("/urls/:id", (req, res) => {
 
   if (!userId) {
     return res
-      .status(403)
+      .status(401)
       .send("Can not edit this URL if you are not login!\n");
   } else if (!Object.keys(urlDatabase).includes(shortURL)) {
     return res.status(403).send("Failed, this short URL has not been created.");
   } else if (userId !== urlDatabase[shortURL].userId) {
-    return res.status(403).send("You can not modify other user's URL");
+    return res.status(401).send("You can not modify other user's URL");
   }
 
   const content = req.body.longURL;
