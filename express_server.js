@@ -99,6 +99,8 @@ app.get("/u/:id", (req, res) => {
   }
 
   const longURL = urlDatabase[shortURL].longURL;
+
+  // If we created an invalid URL, /u/:id will redirect to page "404 not Found".
   request(longURL, (error, response, body) => {
     if (error) {
       res.render("404");
