@@ -11,7 +11,6 @@ const urlDatabase = {};
 const users = {};
 const { getUserByEmail, urlFinder, generateRandomString } = require("./helper");
 
-// -------------------------------------------------
 app.use(
   cookieSession({
     name: "session",
@@ -21,15 +20,17 @@ app.use(
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.set("view engine", "ejs");
-// -------------------------------------------------
-// -------------------------------------------------
+
+/*Below are get routers */
 
 app.get("/", (req, res) => {
   const userId = req.session.user_id;
   if (userId) {
-    res.redirect("/urls");
+    res.redirect("/urls"); /* Redirect the user to /urls if user is logged in */
   } else {
-    res.redirect("/login");
+    res.redirect(
+      "/login"
+    ); /* Redirect the user to /login if user is not logged in */
   }
 });
 
@@ -46,8 +47,6 @@ app.get("/urls", (req, res) => {
     email,
     urls,
   };
-  console.log(users);
-  console.log(urlDatabase);
   res.render("urls_index", templateVars);
 });
 
@@ -59,9 +58,14 @@ app.get("/urls/new", (req, res) => {
     email,
   };
   if (userId) {
-    return res.render("urls_new", templateVars);
+    return res.render(
+      "urls_new",
+      templateVars
+    ); /* Redirect the user to /urls/new showing shortURL and the corresponding longURL if user created a new one */
   }
-  res.redirect("/login");
+  res.redirect(
+    "/login"
+  ); /* Redirect the user to /login if user is not logged in */
 });
 
 app.get("/urls/:id", (req, res) => {
@@ -69,6 +73,9 @@ app.get("/urls/:id", (req, res) => {
   const email = userId ? users[userId].email : null;
   const shortURL = req.params.id;
 
+  /* If the user is not logged in */
+  /* or the user enter the shrotURL which was not created by him */
+  /* or the shortURL is invaild, returns HTML with a relevant error message */
   if (!userId) {
     return res.status(400).send("Please Login first");
   } else if (!Object.keys(urlDatabase).includes(shortURL)) {
@@ -90,22 +97,22 @@ app.get("/u/:id", (req, res) => {
   const userId = req.session.user_id;
   const shortURL = req.params.id;
 
-  if (!userId) {
-    return res.status(400).send("Please Login first");
-  } else if (!Object.keys(urlDatabase).includes(shortURL)) {
+  /* If the shortURL is invaild, returns HTML with a relevant error message */
+  if (!Object.keys(urlDatabase).includes(shortURL)) {
     return res.status(403).send("Failed, this short URL has not been created.");
-  } else if (userId !== urlDatabase[shortURL].userId) {
-    return res.status(401).send("Can not access to this URL");
   }
 
   const longURL = urlDatabase[shortURL].longURL;
 
-  // If we created an invalid URL, /u/:id will redirect to page "404 not Found".
   request(longURL, (error, response, body) => {
     if (error) {
-      res.render("404");
+      res.render(
+        "404"
+      ); /* Shows 404 not Found if the corresponding longURL is invalid */
     } else if (response.statusCode === 200) {
-      res.redirect(longURL);
+      res.redirect(
+        longURL
+      ); /* Redirect the user to /longURL when the user click shortURL */
     }
   });
 });
@@ -126,13 +133,16 @@ app.get("/register", (req, res) => {
   res.render("urls_register", templateVars);
 });
 
-// -------------------------------------------------
+/*Below are post routers */
 app.post("/register", (req, res) => {
   const user_id = generateRandomString();
   const email = req.body.email;
   const password = req.body.password;
   const userId = getUserByEmail(email, users);
 
+  /* If the user does not enter the password or email address */
+  /* If the user already registered! */
+  /* returns HTML with a relevant error message  */
   if (!email || !password) {
     return res.status(400).send("Email/Password can not be empty");
   } else if (userId) {
@@ -147,7 +157,9 @@ app.post("/register", (req, res) => {
         password: hash,
       };
       req.session.user_id = user_id;
-      res.redirect("/urls");
+      res.redirect(
+        "/urls"
+      ); /* Redirect the user to /urls after the user register */
     });
   });
 });
@@ -157,18 +169,24 @@ app.post("/login", (req, res) => {
   const password = req.body.password;
   const userId = getUserByEmail(email, users);
 
+  /* If the user have not registered yet */
+  /* returns HTML with a relevant error message  */
   if (!userId) {
     return res
       .status(403)
       .send("Email does not exist! Please enter an valid email address");
   }
 
+  /* If the user enters the wrong password */
+  /* returns HTML with a relevant error message  */
   bcrypt.compare(password, users[userId].password, (err, success) => {
     if (!success) {
       return res.status(403).send("Please enter a correct password!");
     }
     req.session.user_id = users[userId].id;
-    res.redirect("/urls");
+    res.redirect(
+      "/urls"
+    ); /* Redirect the user to /longURL after the user login */
   });
 });
 
@@ -194,6 +212,9 @@ app.post("/urls/:id/delete", (req, res) => {
   const userId = req.session.user_id;
   const shortURL = req.params.id;
 
+  /* If the user is not logged in */
+  /* or the user enter the shrotURL which was not created by him */
+  /* or the shortURL is invaild, the user can not delete the shortURL, and returns HTML with a relevant error message */
   if (!userId) {
     return res
       .status(401)
@@ -205,13 +226,18 @@ app.post("/urls/:id/delete", (req, res) => {
   }
 
   delete urlDatabase[shortURL];
-  res.redirect("/urls");
+  res.redirect(
+    "/urls"
+  ); /*Redirect to /urls after the user delete the shortURL */
 });
 
 app.post("/urls/:id", (req, res) => {
   const userId = req.session.user_id;
   const shortURL = req.params.id;
 
+  /* If the user is not logged in */
+  /* or the user enter the shrotURL which was not created by him */
+  /* or the shortURL is invaild, the user can not update the shortURL, and returns HTML with a relevant error message */
   if (!userId) {
     return res
       .status(401)
@@ -224,7 +250,9 @@ app.post("/urls/:id", (req, res) => {
 
   const content = req.body.longURL;
   urlDatabase[shortURL].longURL = content;
-  res.redirect("/urls");
+  res.redirect(
+    "/urls"
+  ); /*Redirect to /urls after the user update the longURL */
 });
 
 app.post("/logout", (req, res) => {
